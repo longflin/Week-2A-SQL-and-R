@@ -1,0 +1,12 @@
+---
+title: "Week 2A SQL and R"
+author: "Long Lin"
+format: html
+editor: visual
+---
+
+## Week 2A SQL and R: Approach
+
+For the week 2A SQL and R assignment, I plan to gather data of other people's ratings (based on a scale of 1-5) on either a set of recently popular movies or TV shows.  I will then input this data into either PostgreSQL or SQLite.  In order to input the data in SQL, I will use two or three tables and use a relational model to connect the user with the movies and ratings.  Once the data is in SQL, I plan to use RStudio to process the data with tidyverse and dplyr.  I can then draw conclusions based on the data.
+
+
