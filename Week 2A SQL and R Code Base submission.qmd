@@ -7,7 +7,7 @@ editor: visual
 
 ## Week 2A SQL and R: Overview
 
-For the week 2A SQL and R assignment, I gathered movie ratings data from friends (based on a scale of 1-5) on a set of recently popular movies. I then input this data into PostgreSQL. In order to input the data in SQL, I used three tables and a relational model to connect the ratings table with the users and movies. Once the data was in SQL, I used RStudio to process the data with tidyverse.
+For this week's assignment dealing with SQL and R, I gathered data from friends on what they would rate each movie in a set of recently popular movies (based on a scale of 1-5). Then I put this data into PostgreSQL using three tables (ratings, movies, users) with a relational model to connect the ratings table with the users table and movies table. Once the data was in SQL, I used RPostgreSQL to process the data with dplyr.
 
 ## Creating the SQL database
 
@@ -55,55 +55,19 @@ CREATE TABLE ratings (
 
 Next I surveyed my friends about some recent movies and what their ratings for the movies were. Here were the results:
 
-Movies:
+```{r}
+movies_titles <- c("Oppenheimer", "Wicked", "Top Gun: Maverick", "Zootopia 2", "The Housemaid", "Captain America: Brave New World")
+david_ratings <- c("5", "3", "4", "4", "n/a", "n/a")
+aaron_ratings <- c("4", "n/a", "5", "4", "4", "n/a")
+josh_ratings <- c("4", "4", "3", "3", "n/a", "n/a")
+cameron_ratings <- c("n/a", "3", "n/a", "5", "n/a", "4")
+june_ratings <- c("n/a", "n/a", "3", "n/a", "5", "3")
 
-Oppenheimer, Wicked, Top Gun: Maverick, Zootopia 2, The Housemaid, Captain America: Brave New World
+movies_df <- data.frame(Movies = movies_titles, David = david_ratings, Aaron = aaron_ratings, Josh = josh_ratings, Cameron = cameron_ratings, June = june_ratings)
 
-David:
-
-Oppenheimer: 5
-
-Wicked: 3
-
-Top Gun: Maverick: 4
-
-Zootopia 2: 4
-
-Aaron:
-
-Oppenheimer: 4
-
-Top Gun: Maverick: 5
-
-Zootopia 2: 4
-
-The Housemaid: 4
-
-Josh:
-
-Oppenheimer: 4
-
-Wicked: 4
-
-Top Gun: Maverick: 3
-
-Zootopia 2: 3
-
-Cameron:
-
-Wicked: 3
-
-Zootopia 2: 5
-
-Captain America: Brave New World: 4
-
-June:
-
-Top Gun: Maverick: 3
-
-The Housemaid: 5
-
-Captain America: Brave New World: 3
+# View the result
+print(movies_df)
+```
 
 ## Inserting Data
 
@@ -132,32 +96,27 @@ VALUES (1, 1, 5), (1, 2, 3), (1, 3, 4), (1, 4, 4), (1, 5, NULL), (1, 6, NULL),
 
 ## R Studio importing
 
-In order to use the data from the SQL Table in R Studio, I imported the data using RPostgres and the tibble library. Then I used dplyr to process the data.
+In order to use the data from the SQL Table in R Studio, I imported the data using RPostgreSQL. Then I used dplyr to process the data.
 
-```{r}
+```{r grab sql data}
 require("RPostgreSQL")
-library(tibble)
 library(dplyr)
 
 con <- dbConnect(dbDriver("PostgreSQL"),
                  dbname = "Movie-Ratings",
                  host = "localhost",
                  port = 5432,
-                 user = "***************",
-                 password = "***************")
-
+                 user = "",
+                 password = "")
 
 ratings_query <- "SELECT * FROM ratings;"
-ratings_data_frame <- dbGetQuery(con, ratings_query)
-ratings_data <- as_tibble(ratings_data_frame)
+ratings_df <- dbGetQuery(con, ratings_query)
 
 movies_query <- "SELECT * FROM movies;"
-movies_data_frame <- dbGetQuery(con, movies_query)
-movies_data <- as_tibble(movies_data_frame)
+movies_df <- dbGetQuery(con, movies_query)
 
 users_query <- "SELECT * FROM users;"
-users_data_frame <- dbGetQuery(con, users_query)
-users_data <- as_tibble(users_data_frame)
+users_df <- dbGetQuery(con, users_query)
 
 dbDisconnect(con)
 
@@ -165,36 +124,36 @@ dbDisconnect(con)
 
 ## Average Ratings
 
-I then used dplyr to find the average ratings given to each movie, not counting the null values for movies that some users had not seen.
+I then used dplyr to find the average ratings given to each movie, not counting the null values for movies that some users had not seen. I also used left_join to add titles to improve the readability.
 
 ```{r}
-
-ratings_data %>%
+ratings_df %>%
   group_by(movie_id) %>%
   summarize(
-    average_rating = mean(rating, na.rm = TRUE),
-    count = n()
-  )
-
+    "Average Rating" = mean(rating, na.rm = TRUE)
+  )%>%
+  left_join(movies_df, by = "movie_id")
 ```
 
 Next I used dplyr to figure out the number of ratings that each movie got, taking a total count of the ratings based on movie_id and not counting the null values.
 
 ```{r}
-ratings_data %>%
+ratings_df %>%
   group_by(movie_id) %>%
   summarise(
-    non_na_count = sum(!is.na(rating))
-  )
+    "Number of Ratings" = sum(!is.na(rating))
+  )%>%
+  left_join(movies_df, by = "movie_id")
 ```
 
-Finally, I used dplyr to figure out the number of ratings that each user gave.
+Finally, I used dplyr to figure out the number of ratings that each user gave. I also used a left_join to attach the user's name to the table.
 
 ```{r}
-ratings_data %>%
+ratings_df %>%
   group_by(user_id) %>%
   summarise(
-    non_na_count = sum(!is.na(rating))
-  )
+    "Number of Ratings" = sum(!is.na(rating))
+  )%>%
+  left_join(users_df, by = "user_id")
 
 ```
